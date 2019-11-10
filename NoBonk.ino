@@ -68,7 +68,7 @@ void loop() {
 	if(!echoState && echoHold) {
 		echoHold = false;
 		float measure = (float)(micros() - echoStart) / 58.0;
-		if(mesaure < 400.0) {
+		if(measure < 400.0) {
 			distances[1] = distances[0];
 			distances[0] = measure;
 			distanceTimes[1] = distanceTimes[0];
