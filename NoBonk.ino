@@ -19,16 +19,17 @@ const int servo = 33;
 const int servoChannel = 1;
 const int servoFrequency = 50;
 
-BluetoothSerial Serialbt;
-
 float distances[2];
 float distanceTimes[2];
-float velocities[5];
+float velocity;
+float ttc; //time to collsion
+bool ttcStop = false;
 
 const unsigned long measurePeriod = 30;
 
 const unsigned long collisionCutoff = 500;
 
+BluetoothSerial Serialbt;
 
 void setup() {
 	ledcSetup(enableChannel, enableFrequency, 8);
@@ -82,12 +83,21 @@ void loop() {
 		digitalWrite(trigger, LOW);
 	}
 
-	// velocity
-	
+	// velocity in m/s
+	velocity = (distances[1] - distances[0]) / (distanceTimes[0] - distanceTimes[1]) / 10;
 
-	// time to colision
+	// time to colision in ms
+	ttc = distances[0] / velocity / 10;
 
 	// time to colision power setting
+	if(((unsigned long)ttc) <= collisionCutoff) {
+		ttcStop = true;
+		digitalWrite(a1, HIGH);
+		digitalWrite(a2, HIGH);
+		ledcWrite(enableChannel, 255);
+	} else {
+		ttcStop = false;
+	}
 
 	// bluetooth in
 
