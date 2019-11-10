@@ -8,6 +8,8 @@ const int a1 = 12;
 const int a2 = 14;
 
 const int echo = 27;
+bool echoHold = false;
+
 const int trigger = 26;
 
 const int horn = 25;
@@ -15,6 +17,8 @@ const int horn = 25;
 const int servo = 33;
 const int servoChannel = 1;
 const int servoFrequency = 50;
+
+BluetoothSerial Serialbt;
 
 
 void setup() {
@@ -36,10 +40,12 @@ void setup() {
 
 	ledcSetup(servoChannel, servoFrequency, QW);
 	ledcAttachPin(servo, servoChannel);
-	ledcWrite(servoChannel, 19)
+	ledcWrite(servoChannel, 19);
+
+	Serialbt.begin("NoBonk ESP");
 }
 
 
-void main() {
+void loop() {
 	
 }
