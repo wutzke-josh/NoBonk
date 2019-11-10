@@ -2,10 +2,6 @@
 
 const int enable = 13;
 const int enableChannel = 0;
-const int enableFrequency = 1000;
-
-const int a1 = 12;
-const int a2 = 14;
 
 const int echo = 27;
 bool echoHold = false;
@@ -19,7 +15,7 @@ const int servo = 33;
 const int servoChannel = 1;
 const int servoFrequency = 50;
 
-float distances[2];
+float distances[2] = {100.0, 100.0};
 float distanceTimes[2];
 float velocity;
 float ttc; //time to collsion
@@ -32,14 +28,9 @@ const unsigned long collisionCutoff = 500;
 BluetoothSerial Serialbt;
 
 void setup() {
-	ledcSetup(enableChannel, enableFrequency, 8);
+	ledcSetup(enableChannel, servoFrequency, 8);
 	ledcAttachPin(enable, enableChannel);
 	ledcWrite(enableChannel, 0);
-
-	pinMode(a1, OUTPUT);
-	digitalWrite(a1, LOW);
-	pinMode(a2, OUTPUT);
-	digitalWrite(a2, LOW);
 
 	pinMode(echo, INPUT);
 	pinMode(trigger, OUTPUT);
@@ -52,8 +43,19 @@ void setup() {
 	ledcAttachPin(servo, servoChannel);
 	ledcWrite(servoChannel, 19);
 
+  Serial.begin(9600);
+  Serial.println("Hello!");
+
 	Serialbt.begin("NoBonk ESP");
-	Serial.begin(9600);
+//	bool linked = Serialbt.connect("OnePlus 6T");
+//  while(!linked) {
+//     linked = Serialbt.connected(10000);
+//     Serial.println("trying again...");
+//  }
+//  Serial.println("Connected!");
+//  digitalWrite(horn, HIGH);
+//  delay(200);
+//  digitalWrite(horn, LOW);
 }
 
 
@@ -84,35 +86,57 @@ void loop() {
 		digitalWrite(trigger, LOW);
 	}
 
-	// velocity in m/s
-	velocity = (distances[1] - distances[0]) / (distanceTimes[0] - distanceTimes[1]) / 10;
-
-	// time to colision in ms
-	ttc = distances[0] / velocity / 10;
-
-	// if not getting good distance measurements, don't lock up car
-	if(millis() - distanceTimes[0] <= 1000) {
-		ttc = 1000;
-	}
-
-	// time to colision power setting
-	if(((unsigned long)ttc) <= collisionCutoff) {
-		ttcStop = true;
-		digitalWrite(a1, HIGH);
-		digitalWrite(a2, HIGH);
-		ledcWrite(enableChannel, 255);
-	} else {
-		ttcStop = false;
-	}
+  Serial.println(distances[0]);
 
 	// bluetooth in
-  if(Serialbt.available()) {
-    Serial.write(Serialbt.read());
-  }
+	bool lastDir;
+	int speed;
+	int steer;
+	bool honk;
+	while(Serialbt.available()) {
+		int msg = Serialbt.read();
+		if((msg == 'w') && (distances[0] >= 20.0)) {
+			speed = 26;
+			lastDir = true;
+		} else if(msg == 's') {
+			speed = 11;
+			lastDir = false;
+		} else if(msg == 'd') {
+			steer = map(20, 0, 180, 10, 26);
+			if(lastDir) {
+				speed = 26;
+			} else {
+				speed = 13;
+			}
+		} else if(msg == 'a') {
+			steer = map(135, 0, 180, 10, 26);
+			if(lastDir) {
+				speed = 26;
+			} else {
+				speed = 13;
+			}
+		} else if(msg == 'e') {
+			honk = true;
+		} else if(msg == '0') {
+			speed = map(90, 0, 180, 13, 26);
+			steer = map(75, 0, 180, 10, 26);
+		} else if(msg == 'o') {
+			honk = false;
+		}
+	}
+
 
 	// set motors
+	if(!ttcStop) {
+		ledcWrite(enableChannel, speed);
+	} else {
+		honk = true;
+	}
+	ledcWrite(servoChannel, steer);
 
-	// set servo
-
-	// horn
+	if(honk) {
+		digitalWrite(horn, HIGH);
+	} else {
+		digitalWrite(horn, LOW);
+	}
 }
