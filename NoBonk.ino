@@ -53,6 +53,7 @@ void setup() {
 	ledcWrite(servoChannel, 19);
 
 	Serialbt.begin("NoBonk ESP");
+	Serial.begin(9600);
 }
 
 
@@ -68,6 +69,7 @@ void loop() {
 	if(!echoState && echoHold) {
 		echoHold = false;
 		float measure = (float)(micros() - echoStart) / 58.0;
+		Serial.println(measure);
 		if(measure < 400.0) {
 			distances[1] = distances[0];
 			distances[0] = measure;
