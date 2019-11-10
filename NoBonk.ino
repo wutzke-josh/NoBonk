@@ -48,7 +48,7 @@ void setup() {
 	pinMode(horn, OUTPUT);
 	digitalWrite(horn, LOW);
 
-	ledcSetup(servoChannel, servoFrequency, QW);
+	ledcSetup(servoChannel, servoFrequency, 8);
 	ledcAttachPin(servo, servoChannel);
 	ledcWrite(servoChannel, 19);
 
@@ -69,7 +69,6 @@ void loop() {
 	if(!echoState && echoHold) {
 		echoHold = false;
 		float measure = (float)(micros() - echoStart) / 58.0;
-		Serial.println(measure);
 		if(measure < 400.0) {
 			distances[1] = distances[0];
 			distances[0] = measure;
@@ -91,6 +90,11 @@ void loop() {
 	// time to colision in ms
 	ttc = distances[0] / velocity / 10;
 
+	// if not getting good distance measurements, don't lock up car
+	if(millis() - distanceTimes[0] <= 1000) {
+		ttc = 1000;
+	}
+
 	// time to colision power setting
 	if(((unsigned long)ttc) <= collisionCutoff) {
 		ttcStop = true;
@@ -102,6 +106,9 @@ void loop() {
 	}
 
 	// bluetooth in
+  if(Serialbt.available()) {
+    Serial.write(Serialbt.read());
+  }
 
 	// set motors
 
